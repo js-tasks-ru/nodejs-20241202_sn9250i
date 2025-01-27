@@ -1,5 +1,6 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { Task, TaskStatus } from "./task.model";
+import { isEnum } from "class-validator";
 
 @Injectable()
 export class TasksService {
@@ -40,5 +41,25 @@ export class TasksService {
     status?: TaskStatus,
     page?: number,
     limit?: number,
-  ): Task[] {}
+  ): Task[] {
+    let filteredTasks = [...this.tasks];
+
+    if (
+      status && !isEnum(status, TaskStatus) ||
+      page && page < 0 ||
+      limit && limit < 0
+    ) {
+      throw new BadRequestException('Bad Request');
+    }
+
+    if (status) {
+      filteredTasks = filteredTasks.filter(task => task.status === status);
+    }
+
+    if (page && limit) {
+      filteredTasks = filteredTasks.splice((page - 1) * limit, limit);
+    }
+
+    return filteredTasks;
+  }
 }
